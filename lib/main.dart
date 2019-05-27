@@ -152,6 +152,7 @@ class ChatMassage extends StatelessWidget {
                 child: Text(_name[0]),
               ),
             ),
+
              Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
