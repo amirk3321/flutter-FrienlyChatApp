@@ -1,12 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/cupertino.dart';
 
 void main() => runApp(FriendlyChat());
 
 class FriendlyChat extends StatelessWidget {
+  final ThemeData kIOSTheme = new ThemeData(
+      primarySwatch: Colors.orange,
+      primaryColor: Colors.grey[100],
+      primaryColorBrightness: Brightness.light);
+  final ThemeData KDefaultTheme = new ThemeData(
+      primarySwatch: Colors.purple, accentColor: Colors.orangeAccent[400]);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: "Friendly Chat",
+      theme: defaultTargetPlatform == TargetPlatform.iOS
+          ? kIOSTheme
+          : KDefaultTheme,
       color: Theme.of(context).accentColor,
       home: new ChatScreen(),
     );
@@ -26,14 +38,14 @@ class ChatScreen extends StatefulWidget {
 //that extends the StatefulWidget class.
 class ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   final List<ChatMassage> _massage = <ChatMassage>[];
-  bool _isConpose=false;
+  bool _isConpose = false;
 
   final TextEditingController _textEditingController =
       new TextEditingController();
 
   @override
   void dispose() {
-    for (ChatMassage massage in _massage){
+    for (ChatMassage massage in _massage) {
       massage.animationController.dispose();
     }
 
@@ -43,15 +55,14 @@ class ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   void _handleSubmitted(String msg) {
     _textEditingController.clear();
     setState(() {
-      _isConpose=false;
+      _isConpose = false;
     });
     ChatMassage massage = new ChatMassage(
       text: msg,
       animationController: AnimationController(
-        vsync: this,
-        duration: Duration(milliseconds: 700),
-        animationBehavior: AnimationBehavior.preserve
-      ),
+          vsync: this,
+          duration: Duration(milliseconds: 700),
+          animationBehavior: AnimationBehavior.preserve),
     );
     // Only synchronous operations should be performed in setState()
     //because otherwise the framework could rebuild the widgets before the operation finishes.
@@ -72,9 +83,9 @@ class ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               child: TextField(
                 controller: _textEditingController,
                 onSubmitted: _handleSubmitted,
-                onChanged: (String msg){
+                onChanged: (String msg) {
                   setState(() {
-                    _isConpose=msg.length >0;
+                    _isConpose = msg.length > 0;
                   });
                 },
                 style: TextStyle(color: Colors.red),
@@ -85,14 +96,20 @@ class ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             ), //new end flexible
             new Container(
               margin: const EdgeInsets.symmetric(horizontal: 4.0),
-              child: new IconButton(
-                  disabledColor: Colors.red,
-                  icon: new Icon(Icons.send),
-                  color: Colors.blue,
-                  onPressed:
-                  _isConpose ?()=>_handleSubmitted(_textEditingController.text)
-                      :null,
-              ),
+              child: Theme.of(context).platform == TargetPlatform.iOS
+                  ? CupertinoButton(
+                      child: Text("Send"),
+                      onPressed: _isConpose
+                          ? () => _handleSubmitted(_textEditingController.text)
+                          : null)
+                  : IconButton(
+                      disabledColor: Colors.red,
+                      icon: new Icon(Icons.send),
+                      color: Colors.blue,
+                      onPressed: _isConpose
+                          ? () => _handleSubmitted(_textEditingController.text)
+                          : null,
+                    ),
             ),
           ],
         ),
@@ -105,6 +122,7 @@ class ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     return new Scaffold(
       appBar: AppBar(
         title: Text("Friendly Chat"),
+        elevation: Theme.of(context).platform == TargetPlatform.iOS ? 0.0 : 4.0,
       ),
       body: Column(
         children: <Widget>[
@@ -139,8 +157,7 @@ class ChatMassage extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizeTransition(
       sizeFactor: CurvedAnimation(
-          parent: animationController,
-          curve: Curves.easeInBack),
+          parent: animationController, curve: Curves.easeInBack),
       axisAlignment: 0.0,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 10.0),
@@ -152,8 +169,7 @@ class ChatMassage extends StatelessWidget {
                 child: Text(_name[0]),
               ),
             ),
-
-             Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
