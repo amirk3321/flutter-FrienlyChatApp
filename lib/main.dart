@@ -7,6 +7,7 @@ class FriendlyChat extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: "Friendly Chat",
+      color: Theme.of(context).accentColor,
       home: new ChatScreen(),
     );
   }
@@ -23,41 +24,78 @@ class ChatScreen extends StatefulWidget {
 // you should encapsulate this data in a State object.
 // You can then associate your State object with a widget
 //that extends the StatefulWidget class.
-class ChatScreenState extends State<ChatScreen> {
+class ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   final List<ChatMassage> _massage = <ChatMassage>[];
+  bool _isConpose=false;
+
   final TextEditingController _textEditingController =
       new TextEditingController();
 
+  @override
+  void dispose() {
+    for (ChatMassage massage in _massage){
+      massage.animationController.dispose();
+    }
+
+    super.dispose();
+  }
+
   void _handleSubmitted(String msg) {
     _textEditingController.clear();
-    ChatMassage massage = new ChatMassage(text: msg);
+    setState(() {
+      _isConpose=false;
+    });
+    ChatMassage massage = new ChatMassage(
+      text: msg,
+      animationController: AnimationController(
+        vsync: this,
+        duration: Duration(milliseconds: 700),
+        animationBehavior: AnimationBehavior.preserve
+      ),
+    );
     // Only synchronous operations should be performed in setState()
     //because otherwise the framework could rebuild the widgets before the operation finishes.
     setState(() {
       _massage.insert(0, massage);
     });
+    massage.animationController.forward();
   } //end _handleSubmitted
 
   Widget _buildTextComposer() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: Row(
-        children: <Widget>[
-          Flexible(
-            child: TextField(
-              controller: _textEditingController,
-              onSubmitted: _handleSubmitted,
-              decoration: InputDecoration.collapsed(hintText: "Sent massage.."),
+    return IconTheme(
+      data: IconThemeData(color: Theme.of(context).backgroundColor),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: Row(
+          children: <Widget>[
+            Flexible(
+              child: TextField(
+                controller: _textEditingController,
+                onSubmitted: _handleSubmitted,
+                onChanged: (String msg){
+                  setState(() {
+                    _isConpose=msg.length >0;
+                  });
+                },
+                style: TextStyle(color: Colors.red),
+                cursorColor: Colors.red,
+                decoration:
+                    InputDecoration.collapsed(hintText: "Sent massage.."),
+              ),
+            ), //new end flexible
+            new Container(
+              margin: const EdgeInsets.symmetric(horizontal: 4.0),
+              child: new IconButton(
+                  disabledColor: Colors.red,
+                  icon: new Icon(Icons.send),
+                  color: Colors.blue,
+                  onPressed:
+                  _isConpose ?()=>_handleSubmitted(_textEditingController.text)
+                      :null,
+              ),
             ),
-          ), //new end flexible
-          new Container(
-            margin: const EdgeInsets.symmetric(horizontal: 4.0),
-            child: new IconButton(
-                icon: new Icon(Icons.send),
-                color: Colors.blue,
-                onPressed: () => _handleSubmitted(_textEditingController.text)),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   } //end _textEditingController
@@ -78,11 +116,10 @@ class ChatScreenState extends State<ChatScreen> {
               padding: EdgeInsets.all(8.0),
             ),
           ),
-          Divider(height: 1.0),
+          Divider(height: 2.0),
           Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor
-            ),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: Theme.of(context).cardColor),
             child: _buildTextComposer(),
           ),
         ],
@@ -92,35 +129,43 @@ class ChatScreenState extends State<ChatScreen> {
 } //end ChatScreenState
 
 class ChatMassage extends StatelessWidget {
-  ChatMassage({this.text});
+  ChatMassage({this.text, this.animationController});
 
   final String text;
+  final AnimationController animationController;
   String _name = "amir";
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 10.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          new Container(
-            margin: const EdgeInsets.symmetric(vertical: 16.0),
-            child: CircleAvatar(
-              child: new Text(_name[0]),
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(_name, style: Theme.of(context).textTheme.subhead),
-              Container(
-                margin: const EdgeInsets.only(top: 5.0),
-                child: Text(text),
+    return SizeTransition(
+      sizeFactor: CurvedAnimation(
+          parent: animationController,
+          curve: Curves.easeInBack),
+      axisAlignment: 0.0,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 10.0),
+        child: Row(
+          children: <Widget>[
+            Container(
+              margin: const EdgeInsets.only(right: 16.0),
+              child: CircleAvatar(
+                child: Text(_name[0]),
               ),
-            ],
-          ),
-        ],
+            ),
+             Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(_name, style: Theme.of(context).textTheme.subhead),
+                  Container(
+                    margin: const EdgeInsets.only(top: 5.0),
+                    child: Text(text),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
